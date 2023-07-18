@@ -1,0 +1,62 @@
+with market as (
+
+SELECT DISTINCT SUBSTR(AV.NAME,1,5) ZIP_CODE, PM.NAME PRICE_MKT
+
+FROM SDR_PM.PM_GEO_AVAIL_ROLLUP_ALL@server AV, SDR_PM.PM_GEO_PROFILE@server PM
+
+WHERE EFF_START_DATE = TO_DATE(TO_CHAR(NEXT_DAY(SYSDATE, 'SUNDAY'), 'DD-MON-YYYY'))
+
+AND alt_del_client_id = 1234567
+
+AND AV.PRICE_GEO_PROFILE_ID = PM.GEO_PROFILE_ID
+
+AND PM.NAME = 'AZ PHOENIX'
+
+ORDER BY 2,1)
+
+ 
+
+SELECT /*+ parallel(bus.bus_delpt_addrs,4) */
+
+ 
+
+
+               addrs.SUD || ' ' || addrs.SUN Unit,
+
+                addrs.ST_NUM || ' ' || addrs.ST_PRE_DIRECT || ' ' || addrs.ST_NAME || ' ' || addrs.ST_SUFFIX Address,
+
+                zip.CITY_NAME City,
+
+                addrs.ST_POST_DIRECT,
+
+                zip.STATE_CD State,
+
+                addrs.ZIP,
+
+               addrs.PLUS4 Zip4,
+
+                addrs.RT_NUM Cart
+
+           FROM bus.BUS_DELPT_ADDRS                         addrs,
+
+                bus.BUS_ZIP                                 zip,
+
+                market geos,
+
+               (SELECT ADDRS_ID
+
+                FROM bus.bus_supr_delv
+
+                WHERE last_update_date > SYSDATE - 16 AND SUPR_TYPE_CD = 'DND') DND
+
+             WHERE     addrs.ZIP = zip.ZIP
+
+                AND addrs.ZIP = geos.ZIP_CODE
+
+                AND addrs.SUPR_DELV_IND = 'Y'
+
+                AND addrs.DELETED_ADDRS_IND = 'N'
+
+                AND addrs.addrs_id = DND.addrs_id
+
+  
