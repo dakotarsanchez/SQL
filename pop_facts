@@ -1,0 +1,48 @@
+--Use the SQL below to load Pop Facts data for new Tables into cl_desctab. The SQL should be ran for each new table being created by updated the New_Table_Assignment in the where clause.
+
+
+insert into claritas.cl_desctab
+WITH NumberedRows AS (
+    SELECT
+        NEW_TABLE_ASSIGNMENT AS TABLENAME,
+        ROW_NUMBER() OVER (ORDER BY to_number(FIELD_NUM_TDA)) AS FIELDNUM,
+        VARIABLE_CODE AS FIELDNAME,
+        VARIABLE_NAME AS FIELDDESCR,
+        '6.2' AS FIELDTYPE,
+        FIELD_TYPE AS FIELDCONTE,
+        NUM_DECIMALS AS DECIMALS,
+        'CLARITAS' as SOURCE,
+        null as user_access,
+        3 as Var_format,
+        0 as NATL_AVG,
+        'I' as avg_type,
+        (select MAX(to_number(PK)) from cl_desctab) AS max_pk, 
+        '1' as include_in_CB,
+        '0' as include_in_datadist,
+        '1' as include_in_imp
+    FROM
+        CLARITAS_POPFACTS_FIELD_DESC
+    WHERE
+        NEW_TABLE_ASSIGNMENT = 'TAB101'
+    Order by TO_Number(FIELD_NUM_TDA)
+)
+SELECT
+    TABLENAME,
+    FIELDNUM,
+    FIELDNAME,
+    FIELDDESCR,
+    FIELDTYPE,
+    FIELDCONTE,
+    DECIMALS,
+    SOURCE,
+    user_access,
+    Var_format,
+    NATL_AVG,
+    avg_type,
+    max_pk + ROW_NUMBER() OVER (order by FIELDNUM) AS PK,
+    include_in_CB,
+    include_in_datadist,
+    include_in_imp
+FROM
+    NumberedRows
+Order by TO_NUMber(FIELDNUM);
